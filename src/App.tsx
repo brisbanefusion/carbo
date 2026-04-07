@@ -38,7 +38,18 @@ import {
 import { cn } from './lib/utils';
 import { CARB_EXCHANGE_DATA, FoodCategory, FoodItem } from './constants';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Initialize AI lazily to prevent crash if API key is missing
+let aiInstance: GoogleGenAI | null = null;
+const getAi = () => {
+  if (!aiInstance) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY is not defined. Please set it in your environment variables.');
+    }
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiInstance;
+};
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'list' | 'charts'>('list');
@@ -106,6 +117,7 @@ export default function App() {
   const fetchAiFact = async () => {
     setIsAiLoading(true);
     try {
+      const ai = getAi();
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: "Berikan saya satu fakta menarik dan praktikal tentang pengiraan karbohidrat atau senarai pertukaran diabetik dalam Bahasa Melayu. Pastikan ia ringkas dan membantu.",
